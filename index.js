@@ -31,6 +31,14 @@ async function run() {
             res.json(bikes);
         })
 
+        //GET SPECIFIC API WITH ID
+        app.get('/bikes/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) }
+            const bike = await bikesCollection.findOne(query);
+            res.json(bike);
+        })
+
     }
     finally {
         // await client.close();

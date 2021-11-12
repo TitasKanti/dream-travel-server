@@ -47,11 +47,23 @@ async function run() {
             res.json(result);
         })
 
-        //GET API ORDER
+
+        //GET QUERY API ORDER
         app.get('/orders', async (req, res) => {
-            const cursor = orderCollection.find({});
+            const email = req.query.email;
+            const query = { email: email }
+            const cursor = orderCollection.find(query);
             const orders = await cursor.toArray();
             res.json(orders);
+        })
+
+
+        // DELETE API ORDER
+        app.delete('/orders/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: id };
+            const result = await orderCollection.deleteOne(query);
+            res.json(result);
         })
 
     }

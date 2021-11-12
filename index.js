@@ -22,7 +22,8 @@ async function run() {
 
         const database = client.db("explore");
         const bikesCollection = database.collection("bikes");
-        const userssCollection = database.collection("users");
+        const orderCollection = database.collection("orders");
+        const usersCollection = database.collection("users");
 
         //GET API
         app.get('/bikes', async (req, res) => {
@@ -39,6 +40,20 @@ async function run() {
             res.json(bike);
         })
 
+        //POST API TO GET DATA FROM CLIENT SITE AND SEND IT TO MONGODB
+        app.post('/orders', async (req, res) => {
+            const newOrder = req.body;
+            const result = await orderCollection.insertOne(newOrder);
+            res.json(result);
+        })
+
+        //GET API ORDER
+        app.get('/orders', async (req, res) => {
+            const cursor = orderCollection.find({});
+            const orders = await cursor.toArray();
+            res.json(orders);
+        })
+
     }
     finally {
         // await client.close();
@@ -48,7 +63,7 @@ async function run() {
 run().catch(console.dir);
 
 app.get('/', (req, res) => {
-    res.send('Hello Doctors Portal!')
+    res.send('Hello Bikes Portal!')
 })
 
 app.listen(port, () => {

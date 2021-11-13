@@ -47,6 +47,24 @@ async function run() {
             res.json(result);
         })
 
+        //POST USERS API
+        app.post('/users', async (req, res) => {
+            const user = req.body;
+            const result = await usersCollection.insertOne(user);
+            console.log(result);
+            res.json(result);
+        })
+
+        //UPSERT USER
+        app.put('/users', async (req, res) => {
+            const user = req.body;
+            const filter = { email: user.email };
+            const options = { upsert: true };
+            const updateDoc = { $set: user };
+            const result = await usersCollection.updateOne(filter, updateDoc, options);
+            res.json(result);
+        })
+
 
         //GET QUERY API ORDER
         app.get('/orders', async (req, res) => {
@@ -65,6 +83,23 @@ async function run() {
             const result = await orderCollection.deleteOne(query);
             res.json(result);
         })
+
+        //UPDATE API ORDER STATUS
+        // app.put('/orders/:id', async (req, res) => {
+        //     const id = req.params.id;
+        //     console.log(id)
+        //     const updatedOrder = req.body;
+        //     console.log(updatedOrder);
+        //     const filter = { _id: id };
+        //     const options = { upsert: true };
+        //     const updateDoc = {
+        //         $set: {
+        //             status: updatedOrder
+        //         }
+        //     };
+        //     const result = await orderCollection.updateOne(filter, updateDoc, options);
+        //     res.json('result');
+        // })
 
     }
     finally {

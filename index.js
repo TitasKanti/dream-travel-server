@@ -46,10 +46,8 @@ async function run() {
         //POST API TO GET BIKE DATA FROM CLIENT SITE AND SEND IT TO MONGODB
         app.post('/bikes', async (req, res) => {
             const newBike = req.body;
-            console.log(newBike);
             const result = await bikesCollection.insertOne(newBike);
             res.json(result);
-            console.log(result)
         })
 
         //POST API TO GET DATA FROM CLIENT SITE AND SEND IT TO MONGODB
@@ -62,7 +60,6 @@ async function run() {
         //POST REVIEW API
         app.post('/reviews', async (req, res) => {
             const review = req.body;
-            console.log(review);
             const result = await reviewCollection.insertOne(review);
             res.json(result)
         })
@@ -90,7 +87,6 @@ async function run() {
         app.post('/users', async (req, res) => {
             const user = req.body;
             const result = await usersCollection.insertOne(user);
-            console.log(result);
             res.json(result);
         })
 
@@ -164,7 +160,6 @@ async function run() {
             };
             const result = await orderCollection.updateOne(filter, updateDoc, options);
             res.json(result);
-            console.log(result)
         })
 
     }

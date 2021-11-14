@@ -47,6 +47,18 @@ async function run() {
             res.json(result);
         })
 
+        //GET USERS API
+        app.get('/users/:email', async (req, res) => {
+            const email = req.params.email;
+            const query = { email };
+            const user = await usersCollection.findOne(query);
+            let isAdmin = false;
+            if (user?.role === 'admin') {
+                isAdmin = true;
+            }
+            res.json({ admin: isAdmin });
+        })
+
         //POST USERS API
         app.post('/users', async (req, res) => {
             const user = req.body;
@@ -55,13 +67,22 @@ async function run() {
             res.json(result);
         })
 
-        //UPSERT USER
+        //UPSERT USER comes from third party login
         app.put('/users', async (req, res) => {
             const user = req.body;
             const filter = { email: user.email };
             const options = { upsert: true };
             const updateDoc = { $set: user };
             const result = await usersCollection.updateOne(filter, updateDoc, options);
+            res.json(result);
+        })
+
+        //making admin api
+        app.put('/users/admin', async (req, res) => {
+            const user = req.body;
+            const filter = { email: user.email };
+            const updateDoc = { $set: { role: 'admin' } };
+            const result = await usersCollection.updateOne(filter, updateDoc);
             res.json(result);
         })
 
@@ -75,6 +96,20 @@ async function run() {
             res.json(orders);
         })
 
+        //GET ALL ORDERS
+        app.get('/allOrders', async (req, res) => {
+            const cursor = orderCollection.find({});
+            const result = await cursor.toArray();
+            res.json(result);
+        })
+
+        //GET SPECIFIC API from orderCollection
+        app.get('/orders/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: id };
+            const result = await orderCollection.findOne(query);
+            res.send(result);
+        })
 
         // DELETE API ORDER
         app.delete('/orders/:id', async (req, res) => {
@@ -84,22 +119,27 @@ async function run() {
             res.json(result);
         })
 
-        //UPDATE API ORDER STATUS
-        // app.put('/orders/:id', async (req, res) => {
+        // // DELETE API ALL ORDER
+        // app.delete('/allOrders/:id', async (req, res) => {
         //     const id = req.params.id;
-        //     console.log(id)
-        //     const updatedOrder = req.body;
-        //     console.log(updatedOrder);
-        //     const filter = { _id: id };
-        //     const options = { upsert: true };
-        //     const updateDoc = {
-        //         $set: {
-        //             status: updatedOrder
-        //         }
-        //     };
-        //     const result = await orderCollection.updateOne(filter, updateDoc, options);
-        //     res.json('result');
+        //     const query = { _id: id };
+        //     const result = await orderCollection.deleteOne(query);
+        //     res.json(result);
         // })
+
+        // UPDATE API ORDER STATUS
+        app.put('/orders/:id', async (req, res) => {
+            const id = req.params.id;
+            const updatedOrder = req.body;
+            const filter = { _id: id };
+            const options = { upsert: true };
+            const updateDoc = {
+                $set: { status: updatedOrder.status }
+            };
+            const result = await orderCollection.updateOne(filter, updateDoc, options);
+            res.json(result);
+            console.log(result)
+        })
 
     }
     finally {

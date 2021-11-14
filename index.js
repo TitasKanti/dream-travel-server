@@ -24,6 +24,9 @@ async function run() {
         const bikesCollection = database.collection("bikes");
         const orderCollection = database.collection("orders");
         const usersCollection = database.collection("users");
+        const reviewCollection = database.collection("reviews");
+
+
 
         //GET API
         app.get('/bikes', async (req, res) => {
@@ -40,11 +43,35 @@ async function run() {
             res.json(bike);
         })
 
+        //POST API TO GET BIKE DATA FROM CLIENT SITE AND SEND IT TO MONGODB
+        app.post('/bikes', async (req, res) => {
+            const newBike = req.body;
+            console.log(newBike);
+            const result = await bikesCollection.insertOne(newBike);
+            res.json(result);
+            console.log(result)
+        })
+
         //POST API TO GET DATA FROM CLIENT SITE AND SEND IT TO MONGODB
         app.post('/orders', async (req, res) => {
             const newOrder = req.body;
             const result = await orderCollection.insertOne(newOrder);
             res.json(result);
+        })
+
+        //POST REVIEW API
+        app.post('/reviews', async (req, res) => {
+            const review = req.body;
+            console.log(review);
+            const result = await reviewCollection.insertOne(review);
+            res.json(result)
+        })
+
+        //GET REVIEW API
+        app.get('/reviews', async (req, res) => {
+            const cursor = reviewCollection.find({});
+            const reviews = await cursor.toArray();
+            res.json(reviews);
         })
 
         //GET USERS API
@@ -119,15 +146,14 @@ async function run() {
             res.json(result);
         })
 
-        // // DELETE API ALL ORDER
-        // app.delete('/allOrders/:id', async (req, res) => {
-        //     const id = req.params.id;
-        //     const query = { _id: id };
-        //     const result = await orderCollection.deleteOne(query);
-        //     res.json(result);
-        // })
+        // DELETE API PRODUCTS/BIKES
+        app.delete('/bikes/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) };
+            const result = await bikesCollection.deleteOne(query);
+            res.json(result);
+        })
 
-        // UPDATE API ORDER STATUS
         app.put('/orders/:id', async (req, res) => {
             const id = req.params.id;
             const updatedOrder = req.body;

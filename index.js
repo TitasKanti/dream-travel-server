@@ -1,179 +1,92 @@
-const express = require('express')
-const app = express()
+const express = require('express');
+const { MongoClient } = require("mongodb");
 const cors = require('cors');
 require('dotenv').config();
-const { MongoClient } = require('mongodb');
 const ObjectId = require('mongodb').ObjectId;
 
+const app = express();
 const port = process.env.PORT || 5000;
 
-//middleware
+//Middleware
 app.use(cors());
 app.use(express.json());
 
+//Connecting to the database
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.d9ivi.mongodb.net/myFirstDatabase?retryWrites=true&w=majority`;
-
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
 
+client.connect(err => {
+    const eventCollection = client.db("Tourism").collection("events");
+    const orderCollection = client.db("Users").collection("orders");
 
-async function run() {
-    try {
-        await client.connect();
+    //GET API
+    app.get('/travel', async (req, res) => {
+        const cursor = eventCollection.find({});
+        const events = await cursor.toArray();
+        res.send(events);
+    })
 
-        const database = client.db("explore");
-        const bikesCollection = database.collection("bikes");
-        const orderCollection = database.collection("orders");
-        const usersCollection = database.collection("users");
-        const reviewCollection = database.collection("reviews");
+    //POST API to create new event
+    app.post('/addEvent', async (req, res) => {
+        const newEvent = req.body;
+        const addEvent = await eventCollection.insertOne(newEvent);
+        res.send(addEvent);
+    })
 
+    //POST API: Getting data from client side and sending to mongodb
+    app.post('/orders', async (req, res) => {
+        const newOrder = req.body;
+        const result = await orderCollection.insertOne(newOrder);
+        res.send(result);
+    })
 
+    //GET API from orderCollection
+    app.get('/orders', async (req, res) => {
+        const cursor = orderCollection.find({});
+        const orders = await cursor.toArray();
+        res.send(orders);
+    })
 
-        //GET API
-        app.get('/bikes', async (req, res) => {
-            const cursor = bikesCollection.find({});
-            const bikes = await cursor.toArray();
-            res.json(bikes);
-        })
+    //GET SPECIFIC API from orderCollection
+    app.get('/orders/:id', async (req, res) => {
+        const id = req.params.id;
+        const query = { _id: ObjectId(id) };
+        const result = await orderCollection.findOne(query);
+        console.log('load user with id', id);
+        res.send(result);
+    })
 
-        //GET SPECIFIC API WITH ID
-        app.get('/bikes/:id', async (req, res) => {
-            const id = req.params.id;
-            const query = { _id: ObjectId(id) }
-            const bike = await bikesCollection.findOne(query);
-            res.json(bike);
-        })
-
-        //POST API TO GET BIKE DATA FROM CLIENT SITE AND SEND IT TO MONGODB
-        app.post('/bikes', async (req, res) => {
-            const newBike = req.body;
-            const result = await bikesCollection.insertOne(newBike);
-            res.json(result);
-        })
-
-        //POST API TO GET DATA FROM CLIENT SITE AND SEND IT TO MONGODB
-        app.post('/orders', async (req, res) => {
-            const newOrder = req.body;
-            const result = await orderCollection.insertOne(newOrder);
-            res.json(result);
-        })
-
-        //POST REVIEW API
-        app.post('/reviews', async (req, res) => {
-            const review = req.body;
-            const result = await reviewCollection.insertOne(review);
-            res.json(result)
-        })
-
-        //GET REVIEW API
-        app.get('/reviews', async (req, res) => {
-            const cursor = reviewCollection.find({});
-            const reviews = await cursor.toArray();
-            res.json(reviews);
-        })
-
-        //GET USERS API
-        app.get('/users/:email', async (req, res) => {
-            const email = req.params.email;
-            const query = { email };
-            const user = await usersCollection.findOne(query);
-            let isAdmin = false;
-            if (user?.role === 'admin') {
-                isAdmin = true;
+    //UPDATE API
+    app.put('/orders/:id', async (req, res) => {
+        const id = req.params.id;
+        const updatedOrder = req.body;
+        const filter = { _id: ObjectId(id) };
+        const options = { upsert: true };
+        const updateDoc = {
+            $set: {
+                status: updatedOrder.status
             }
-            res.json({ admin: isAdmin });
-        })
+        };
+        const result = await orderCollection.updateOne(filter, updateDoc, options);
+        res.send(result);
+    })
 
-        //POST USERS API
-        app.post('/users', async (req, res) => {
-            const user = req.body;
-            const result = await usersCollection.insertOne(user);
-            res.json(result);
-        })
+    //DELETE API
+    app.delete('/orders/:id', async (req, res) => {
+        const id = req.params.id;
+        const query = { _id: ObjectId(id) };
+        const result = await orderCollection.deleteOne(query);
+        console.log('deleting user with id', result);
+        res.send(result);
+    })
 
-        //UPSERT USER comes from third party login
-        app.put('/users', async (req, res) => {
-            const user = req.body;
-            const filter = { email: user.email };
-            const options = { upsert: true };
-            const updateDoc = { $set: user };
-            const result = await usersCollection.updateOne(filter, updateDoc, options);
-            res.json(result);
-        })
-
-        //making admin api
-        app.put('/users/admin', async (req, res) => {
-            const user = req.body;
-            const filter = { email: user.email };
-            const updateDoc = { $set: { role: 'admin' } };
-            const result = await usersCollection.updateOne(filter, updateDoc);
-            res.json(result);
-        })
-
-
-        //GET QUERY API ORDER
-        app.get('/orders', async (req, res) => {
-            const email = req.query.email;
-            const query = { email: email }
-            const cursor = orderCollection.find(query);
-            const orders = await cursor.toArray();
-            res.json(orders);
-        })
-
-        //GET ALL ORDERS
-        app.get('/allOrders', async (req, res) => {
-            const cursor = orderCollection.find({});
-            const result = await cursor.toArray();
-            res.json(result);
-        })
-
-        //GET SPECIFIC API from orderCollection
-        app.get('/orders/:id', async (req, res) => {
-            const id = req.params.id;
-            const query = { _id: id };
-            const result = await orderCollection.findOne(query);
-            res.send(result);
-        })
-
-        // DELETE API ORDER
-        app.delete('/orders/:id', async (req, res) => {
-            const id = req.params.id;
-            const query = { _id: id };
-            const result = await orderCollection.deleteOne(query);
-            res.json(result);
-        })
-
-        // DELETE API PRODUCTS/BIKES
-        app.delete('/bikes/:id', async (req, res) => {
-            const id = req.params.id;
-            const query = { _id: ObjectId(id) };
-            const result = await bikesCollection.deleteOne(query);
-            res.json(result);
-        })
-
-        app.put('/orders/:id', async (req, res) => {
-            const id = req.params.id;
-            const updatedOrder = req.body;
-            const filter = { _id: id };
-            const options = { upsert: true };
-            const updateDoc = {
-                $set: { status: updatedOrder.status }
-            };
-            const result = await orderCollection.updateOne(filter, updateDoc, options);
-            res.json(result);
-        })
-
-    }
-    finally {
-        // await client.close();
-    }
-}
-
-run().catch(console.dir);
+});
 
 app.get('/', (req, res) => {
-    res.send('Hello Bikes Portal!')
-})
+    res.send('running the server')
+});
 
 app.listen(port, () => {
-    console.log(`listening at ${port}`)
+    console.log('running server from port', port);
 })
+
